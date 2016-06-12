@@ -1,18 +1,20 @@
----
-title: "RepData_PeerAssessment1"
-author: "Luis Felipe Choueiri"
-date: "June 11, 2016"
-output: 
-  html_document: 
-    fig_caption: yes
-    keep_md: yes
----
+# RepData_PeerAssessment1
+Luis Felipe Choueiri  
+June 11, 2016  
 
 Set WD and load in Data
 
-```{r Input}
+
+```r
 setwd("C:/Desktop/Programming/R")
 library("ggplot2")
+```
+
+```
+## Warning: package 'ggplot2' was built under R version 3.2.5
+```
+
+```r
 library("knitr")
 Data <- read.csv("activity.csv")
 Data$date <- as.Date(Data$date)
@@ -23,7 +25,8 @@ CompData <- Data[complete.cases(Data[,1]),]
 
 Calculate the daily total, mean and median steps
 
-```{r DlyStepsCalc}
+
+```r
 CompAggSum <- aggregate(list(Steps = CompData$steps),
                      list(Date = CompData$date),
                      FUN= sum)
@@ -31,26 +34,39 @@ CompAggSum <- aggregate(list(Steps = CompData$steps),
 
 The total Daily steps are
 
-```{r DlyStepsSum}
+
+```r
 qplot(Date, data= CompAggSum, weight= Steps, geom = "histogram", binwidth= 1, ylab = "Steps")
 ```
 
+![](PA1_template_files/figure-html/DlyStepsSum-1.png)<!-- -->
+
 And the mean value is:
 
-```{r DlyStepsmean}
+
+```r
 mean(CompAggSum$Steps)
+```
+
+```
+## [1] 10766.19
 ```
 
 with a median of:
 
-```{r DlyStepsmed}
-median(CompAggSum$Steps)
 
+```r
+median(CompAggSum$Steps)
+```
+
+```
+## [1] 10765
 ```
 
 We then continue our analysis at the interval level, as opposed to the day level
 
-```{r IntStepsCalc}
+
+```r
 CompIntAggMean <- aggregate(list(Steps = CompData$steps),
                      list(Interval = CompData$interval),
                      FUN= mean)
@@ -58,31 +74,40 @@ CompIntAggMean <- aggregate(list(Steps = CompData$steps),
 
 With the linear plot of median steps by interval
 
-```{r IntStepsMean}
+
+```r
 qplot(Interval,Steps, data= CompIntAggMean,  geom = "line", ylab = "Steps")
-
-
 ```
+
+![](PA1_template_files/figure-html/IntStepsMean-1.png)<!-- -->
 
 With max at interval:
 
-```{r IntStepsMax}
-CompIntAggMean[CompIntAggMean$Steps == max(CompIntAggMean$Steps), 1]
 
+```r
+CompIntAggMean[CompIntAggMean$Steps == max(CompIntAggMean$Steps), 1]
+```
+
+```
+## [1] 835
 ```
 
 We then calculate the number of rows in the original data with NAs
 
 
-```{r NAsfound}
-sum(is.na(Data$steps))
 
+```r
+sum(is.na(Data$steps))
+```
+
+```
+## [1] 2304
 ```
 
 We can then fill in these values, using the previously calculated data we can bring in the interval mean values, as some days are missing whole.
 
-```{r CorrData}
 
+```r
 CorrData <- merge(CompIntAggMean, Data, by.x = "Interval", by.y = "interval", all.y = T)
 
 CorrData[is.na(CorrData$steps), 3] <- CorrData[is.na(CorrData$steps),2]
@@ -93,7 +118,8 @@ CorrData <- CorrData[, c(1,3,4)]
 We now recalculate our earlier analysis with the NAs replaced
 
 
-```{r CorrDlyStepsCalc}
+
+```r
 CorrAggSum <- aggregate(list(Steps = CorrData$steps),
                      list(Date = CorrData$date),
                      FUN= sum)
@@ -101,21 +127,33 @@ CorrAggSum <- aggregate(list(Steps = CorrData$steps),
 
 The total Daily steps are
 
-```{r CorrDlyStepsSum}
+
+```r
 qplot(Date, data= CorrAggSum, weight= Steps, geom = "histogram", binwidth= 1, ylab = "Steps")
 ```
 
+![](PA1_template_files/figure-html/CorrDlyStepsSum-1.png)<!-- -->
+
 And the mean value is:
 
-```{r CorrDlyStepsmean}
+
+```r
 mean(CorrAggSum$Steps)
+```
+
+```
+## [1] 10766.19
 ```
 
 with a median of:
 
-```{r CorrDlyStepsmed}
-median(CorrAggSum$Steps)
 
+```r
+median(CorrAggSum$Steps)
+```
+
+```
+## [1] 10766.19
 ```
 
 Showing a small impact to the final calculated values.
@@ -123,7 +161,8 @@ Showing a small impact to the final calculated values.
 
 Continuing our Analysis but focusing on the difference between weekdays and weekends:
 
-```{r CorrWkData}
+
+```r
 CorrData$Weekn <- as.character(weekdays(CorrData$date))
 
 CorrData[CorrData$Weekn %in% c("Saturday","Sunday"), "Weekn"] <- "Weekend"
@@ -138,18 +177,22 @@ CorrAggNData <- aggregate(list(Steps=CorrData$steps),
 
 Plot of weekend data by interval
 
-```{r IntWkEndSteps}
+
+```r
 qplot(Interval,Steps, data= CorrAggNData[CorrAggNData$WeekN == "Weekend",]
       ,  geom = "line", ylab = "Steps", main = "Weekend")
-
 ```
+
+![](PA1_template_files/figure-html/IntWkEndSteps-1.png)<!-- -->
 
 Followed by a plot of Weekday data by interval
 
-```{r IntWkDaySteps}
+
+```r
 qplot(Interval,Steps, data= CorrAggNData[CorrAggNData$WeekN == "Weekday",]
       ,  geom = "line", ylab = "Steps", main = "Weekday")
-
 ```
+
+![](PA1_template_files/figure-html/IntWkDaySteps-1.png)<!-- -->
 
 
