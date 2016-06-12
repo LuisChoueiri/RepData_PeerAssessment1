@@ -1,25 +1,149 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "RepData_PeerAssessment1"
+author: "Luis Felipe Choueiri"
+date: "June 11, 2016"
+output: html_document
 ---
 
+Set WD and load in Data
 
-## Loading and preprocessing the data
+```{r Input}
+setwd("C:/Desktop/Programming/R")
+library("ggplot2")
+Data <- read.csv("activity.csv")
+Data$date <- as.Date(Data$date)
 
-
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
+CompData <- Data[complete.cases(Data[,1]),]
+```
 
 
+Calculate the daily total, mean and median steps
 
-## Are there differences in activity patterns between weekdays and weekends?
+```{r DlyStepsCalc}
+CompAggSum <- aggregate(list(Steps = CompData$steps),
+                     list(Date = CompData$date),
+                     FUN= sum)
+```
+
+The total Daily steps are
+
+```{r DlyStepsSum}
+qplot(Date, data= CompAggSum, weight= Steps, geom = "histogram", binwidth= 1, ylab = "Steps")
+```
+
+And the mean value is:
+
+```{r DlyStepsmean}
+mean(CompAggSum$Steps)
+```
+
+with a median of:
+
+```{r DlyStepsmed}
+median(CompAggSum$Steps)
+
+```
+
+We then continue our analysis at the interval level, as opposed to the day level
+
+```{r IntStepsCalc}
+CompIntAggMean <- aggregate(list(Steps = CompData$steps),
+                     list(Interval = CompData$interval),
+                     FUN= mean)
+```
+
+With the linear plot of median steps by interval
+
+```{r IntStepsMean}
+qplot(Interval,Steps, data= CompIntAggMean,  geom = "line", ylab = "Steps")
+
+
+```
+
+With max at interval:
+
+```{r IntStepsMax}
+CompIntAggMean[CompIntAggMean$Steps == max(CompIntAggMean$Steps), 1]
+
+```
+
+We then calculate the number of rows in the original data with NAs
+
+
+```{r NAsfound}
+sum(is.na(Data$steps))
+
+```
+
+We can then fill in these values, using the previously calculated data we can bring in the interval mean values, as some days are missing whole.
+
+```{r CorrData}
+
+CorrData <- merge(CompIntAggMean, Data, by.x = "Interval", by.y = "interval", all.y = T)
+
+CorrData[is.na(CorrData$steps), 3] <- CorrData[is.na(CorrData$steps),2]
+
+CorrData <- CorrData[, c(1,3,4)]
+```
+
+We now recalculate our earlier analysis with the NAs replaced
+
+
+```{r CorrDlyStepsCalc}
+CorrAggSum <- aggregate(list(Steps = CorrData$steps),
+                     list(Date = CorrData$date),
+                     FUN= sum)
+```
+
+The total Daily steps are
+
+```{r CorrDlyStepsSum}
+qplot(Date, data= CorrAggSum, weight= Steps, geom = "histogram", binwidth= 1, ylab = "Steps")
+```
+
+And the mean value is:
+
+```{r CorrDlyStepsmean}
+mean(CorrAggSum$Steps)
+```
+
+with a median of:
+
+```{r CorrDlyStepsmed}
+median(CorrAggSum$Steps)
+
+```
+
+Showing a small impact to the final calculated values.
+
+
+Continuing our Analysis but focusing on the difference between weekdays and weekends:
+
+```{r CorrWkData}
+CorrData$Weekn <- as.character(weekdays(CorrData$date))
+
+CorrData[CorrData$Weekn %in% c("Saturday","Sunday"), "Weekn"] <- "Weekend"
+CorrData[CorrData$Weekn %in% c("Monday","Tuesday","Wednesday","Thursday","Friday"), "Weekn"] <- "Weekday"
+
+CorrData$Weekn <- as.factor(CorrData$Weekn)
+
+CorrAggNData <- aggregate(list(Steps=CorrData$steps),
+                         list(Interval=CorrData$Interval,WeekN=CorrData$Weekn),
+                         FUN=mean)
+```
+
+Plot of weekend data by interval
+
+```{r IntWkEndSteps}
+qplot(Interval,Steps, data= CorrAggNData[CorrAggNData$WeekN == "Weekend",]
+      ,  geom = "line", ylab = "Steps", main = "Weekend")
+
+```
+
+Followed by a plot of Weekday data by interval
+
+```{r IntWkDaySteps}
+qplot(Interval,Steps, data= CorrAggNData[CorrAggNData$WeekN == "Weekday",]
+      ,  geom = "line", ylab = "Steps", main = "Weekday")
+
+```
